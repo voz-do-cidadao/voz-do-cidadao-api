@@ -1,7 +1,7 @@
 # voz-do-cidadao-api
 
 ### 🚀 Tecnologias
-- Kotlin / Java
+- Kotlin
 - Spring Boot
 - MongoDB
 - Docker
