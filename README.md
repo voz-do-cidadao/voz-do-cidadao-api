@@ -8,9 +8,9 @@
 
 ## 📦 execução local
 
-# execute o docker-compose
+ execute o docker-compose
 1.1 cd docker-compose/
 1.2 docker-compose up
 
-# Rodar o projeto
+ Rodar o projeto
 ./gradlew bootRun
