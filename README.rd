@@ -1,4 +1,4 @@
-# Voz Do povo API
+# Voz Do Cidadão API
 
 ## 🚀 Tecnologias
 - Kotlin / Java
