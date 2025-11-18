@@ -6,9 +6,9 @@
 - MongoDB
 - Docker
 
-## 📦 execução local
+### 📦 execução local
 
-### execute o docker-compose
+#### execute o docker-compose
 * docker-compose up
 
  Rodar o projeto
