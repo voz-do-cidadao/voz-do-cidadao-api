@@ -25,9 +25,8 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib:1.8.0")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("org.springframework.boot:spring-boot-starter-data-mongodb-reactive")
-    // Coroutines (suporte Kotlin + Reactor)
+    implementation ("org.springframework.boot:spring-boot-starter-mail")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.8.1")
-    // Jackson Kotlin module (serialização JSON)
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.springframework.boot:spring-boot-starter-validation")
 
