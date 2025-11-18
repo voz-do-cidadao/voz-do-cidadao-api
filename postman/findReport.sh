@@ -1,0 +1,1 @@
+curl --location 'http://localhost:8080/voz-do-povo/{id}'

@@ -1,0 +1,1 @@
+curl --location --globoff 'http://localhost:8080/voz-do-povo/{{email}}/reports'

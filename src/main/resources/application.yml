@@ -1,0 +1,25 @@
+spring:
+  mail:
+    host: smtp.sendgrid.net
+    port: 587
+    username: apikey
+    password: ${SENDGRID_API_KEY}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+  codec:
+    max-in-memory-size: 20MB
+
+  data:
+    mongodb:
+      uri: mongodb://root:rootpass@localhost:27017/appdb?authSource=admin
+
+  main:
+    web-application-type: reactive
+
+server:
+  port: 8080
+
