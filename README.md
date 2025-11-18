@@ -1,6 +1,6 @@
 # voz-do-cidadao-api
 
-## 🚀 Tecnologias
+### 🚀 Tecnologias
 - Kotlin / Java
 - Spring Boot
 - MongoDB
@@ -8,9 +8,8 @@
 
 ## 📦 execução local
 
- execute o docker-compose
-1.1 cd docker-compose/
-1.2 docker-compose up
+### execute o docker-compose
+* docker-compose up
 
  Rodar o projeto
-./gradlew bootRun
+* ./gradlew bootRun
