@@ -63,7 +63,7 @@ class ReportService @Autowired constructor(
                 getImageBytes(saved.id!!)
                     .flatMap { bytes ->
                         sendEmailImages(
-                            to = "vozdocidadao01@gmail.com",
+                            to = "vozdocidadao01@gmail.com, ${saved.userRequest.email}",
                             subject = "Voz do cidadão",
                             htmlBody = """
     <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
