@@ -63,7 +63,7 @@ class ReportService @Autowired constructor(
                 getImageBytes(saved.id!!)
                     .flatMap { bytes ->
                         sendEmailImages(
-                            to = "vozdocidadao01@gmail.com, ${saved.userRequest.email}",
+                            to = listOf(saved.userRequest.email, "vozdocidadao01@gmail.com"),
                             subject = "Voz do cidadão",
                             htmlBody = """
     <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
@@ -132,7 +132,7 @@ class ReportService @Autowired constructor(
     }
 
     fun sendEmailImages(
-        to: String,
+        to: List<String>,
         subject: String,
         htmlBody: String,
         images: List<ByteArray>
@@ -144,7 +144,7 @@ class ReportService @Autowired constructor(
             val helper = MimeMessageHelper(mimeMessage, true, "UTF-8")
 
             helper.setFrom("vozdocidadao01@gmail.com")
-            helper.setTo(to)
+            helper.setTo(to.toTypedArray())
             helper.setSubject(subject)
 
             val htmlImages = images.indices.joinToString("") { index ->
