@@ -1,7 +1,13 @@
 package voz_do_povo_api.service
 
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.mail.SimpleMailMessage
+import org.springframework.core.io.ByteArrayResource
+import org.springframework.core.io.buffer.DataBufferUtils
+import org.springframework.data.mongodb.core.query.Criteria
+import org.springframework.data.mongodb.core.query.Query
+import org.springframework.data.mongodb.gridfs.ReactiveGridFsTemplate
+import org.springframework.mail.javamail.JavaMailSender
+import org.springframework.mail.javamail.MimeMessageHelper
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -13,8 +19,9 @@ import java.util.UUID
 
 @Service
 class ReportService @Autowired constructor(
+    private val gridFs: ReactiveGridFsTemplate,
     val vozDoPovoRepository: VozDoPovoRepository,
-    val javaMailSender: org.springframework.mail.javamail.JavaMailSender
+    val javaMailSender: JavaMailSender
 ){
 
     fun createReport (publicationData: PublicationData) : Mono<PublicationData> {
@@ -38,7 +45,7 @@ class ReportService @Autowired constructor(
                     userRequest = publication.userRequest,
                     reportAddressRequest = publication.reportAddressRequest,
                     report = ReportRequest(
-                        images= publication.report.images
+                        images = publication.report.images
                             .let { imagesList ->
                                 val updatedImages = imagesList.toMutableList()
                                 updatedImages.add(image)
@@ -53,32 +60,119 @@ class ReportService @Autowired constructor(
                 vozDoPovoRepository.save(updatedImage)
             }
             .flatMap { saved ->
-                if (validToSendEmail(saved)) {
-                    sendEmailReport(
-                        to = "vozdocidadao01@gmail.com",
-                        subject = "Novo relatório",
-                        body = saved.toString()
-                    ).thenReturn(saved)
-                } else {
-                    Mono.just(saved)
-                }
+                getImageBytes(saved.id!!)
+                    .flatMap { bytes ->
+                        sendEmailImages(
+                            to = "vozdocidadao01@gmail.com",
+                            subject = "Voz do cidadão",
+                            htmlBody = """
+    <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+        
+        <h2 style="color: #0A84FF; margin-bottom: 10px;">
+            📢 Novo Relatório Recebido
+        </h2>
+
+        <div style="background: #F7F9FA; padding: 15px 20px; border-radius: 10px; margin-bottom: 20px;">
+            <h3 style="margin: 0 0 10px 0; color: #333;">
+                📝 Tipo de denúncia:
+            </h3>
+            <p style="margin: 0; font-size: 16px; font-weight: bold;">
+                ${saved.report.report}
+            </p>
+        </div>
+
+        <div style="background: #FFFFFF; padding: 15px 20px; border-radius: 10px; border: 1px solid #DDD; margin-bottom: 20px;">
+            <h3 style="margin: 0 0 10px 0; color: #333;">📄 Descrição</h3>
+            <p style="margin: 0; line-height: 1.5;">
+                ${saved.report.reportDescription}
+            </p>
+        </div>
+
+        <div style="background: #FFFFFF; padding: 15px 20px; border-radius: 10px; border: 1px solid #DDD; margin-bottom: 20px;">
+            <h3 style="margin: 0 0 10px 0; color: #333;">📍 Endereço do Relato</h3>
+            <p style="margin: 5px 0;"><strong>Rua:</strong> ${saved.reportAddressRequest.street}</p>
+            <p style="margin: 5px 0;"><strong>Número:</strong> ${saved.reportAddressRequest.number}</p>
+            <p style="margin: 5px 0;"><strong>Cidade:</strong> ${saved.reportAddressRequest.city}</p>
+            <p style="margin: 5px 0;"><strong>Estado:</strong> ${saved.reportAddressRequest.state}</p>
+            <p style="margin: 5px 0;"><strong>Complemento:</strong> ${saved.reportAddressRequest.complement}</p>
+            <p style="margin: 5px 0;"><strong>País:</strong> ${saved.reportAddressRequest.country}</p>
+        </div>
+
+        <h3 style="margin: 0 0 10px 0;">📸 Imagens enviadas:</h3>
+        <p style="color: #777; margin-bottom: 15px;">As imagens estão anexadas abaixo.</p>
+
+    </div>
+""".trimIndent(),
+                            images = bytes
+                        ).thenReturn(saved)
+                    }
             }
     }
 
-    fun sendEmailReport(to: String, subject: String, body: String): Mono<Void> {
+    fun getImageBytes(id: String): Mono<List<ByteArray>> {
+
+        return getImageId(id)
+            .flatMap { pub ->
+                val imgIds = pub.report.images.mapNotNull { it.id }
+                Flux.fromIterable(imgIds)
+                    .flatMap { imageId ->
+                        gridFs.findOne(Query(Criteria.where("_id").`is`(imageId)))
+                            .flatMap { gridFs.getResource(it) }
+                            .flatMap { data ->
+                                DataBufferUtils.join(data.content).map { buffer ->
+                                    val bytes = ByteArray(buffer.readableByteCount())
+                                    buffer.read(bytes)
+                                    DataBufferUtils.release(buffer)
+                                    bytes
+                                }
+                            }
+                    }
+                    .collectList()
+            }
+    }
+
+    fun sendEmailImages(
+        to: String,
+        subject: String,
+        htmlBody: String,
+        images: List<ByteArray>
+    ): Mono<Void> {
 
         return Mono.fromRunnable {
-            val message = SimpleMailMessage().apply {
-                from = "vozdocidadao01@gmail.com"
-                setTo(to)
-                setSubject(subject)
-                text = body
+
+            val mimeMessage = javaMailSender.createMimeMessage()
+            val helper = MimeMessageHelper(mimeMessage, true, "UTF-8")
+
+            helper.setFrom("vozdocidadao01@gmail.com")
+            helper.setTo(to)
+            helper.setSubject(subject)
+
+            val htmlImages = images.indices.joinToString("") { index ->
+                """<img src="cid:image$index" style="max-width: 500px; display:block; margin-bottom:10px;" />"""
             }
-            javaMailSender.send(message)
+
+            helper.setText(
+                """
+            <html>
+                <body>
+                    $htmlBody
+                    <br/><br/>
+                    $htmlImages
+                </body>
+            </html>
+            """.trimIndent(), true
+            )
+            images.forEachIndexed { index, bytes ->
+                helper.addInline("image$index", ByteArrayResource(bytes), "image/jpeg")
+            }
+
+            javaMailSender.send(mimeMessage)
         }
     }
 
-    fun validToSendEmail(publication: PublicationData): Boolean =
-        publication.report.images.isNotEmpty()
-
+    fun getImageId(id: String): Mono<PublicationData> {
+        return vozDoPovoRepository.findById(id).flatMap { publication ->
+            Mono.just(publication ?: throw NoSuchElementException("Image ID not found"))
+        }
+    }
 }
