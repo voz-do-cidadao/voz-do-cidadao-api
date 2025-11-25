@@ -35,4 +35,13 @@ class ReportController (val reportService: ReportService) {
         return reportService.findReportByEmail(email)
     }
 
+    @PostMapping("/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    fun sendEmail(@PathVariable id: String) : Mono<String> {
+         return reportService.findReport(id)
+             .flatMap { publication ->
+                 reportService.sendEmail(publication)
+             }
+    }
+
 }

@@ -56,14 +56,15 @@ class ReportService @Autowired constructor(
                         reportCategory = publication.report.reportCategory
                     )
                 )
-
                 vozDoPovoRepository.save(updatedImage)
             }
-            .flatMap { saved ->
-                getImageBytes(saved.id!!)
-                    .flatMap { bytes ->
+    }
+
+    fun sendEmail (pub: PublicationData): Mono<String> {
+         return getImageBytes(pub.id!!)
+                    .flatMap { bytes -> //n entra aqui
                         sendEmailImages(
-                            to = listOf(saved.userRequest.email, "vozdocidadao01@gmail.com"),
+                            to = listOf(pub.userRequest.email, "vozdocidadao01@gmail.com"),
                             subject = "Voz do cidadão",
                             htmlBody = """
     <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
@@ -77,25 +78,25 @@ class ReportService @Autowired constructor(
                 📝 Tipo de denúncia:
             </h3>
             <p style="margin: 0; font-size: 16px; font-weight: bold;">
-                ${saved.report.report}
+                ${pub.report.report}
             </p>
         </div>
 
         <div style="background: #FFFFFF; padding: 15px 20px; border-radius: 10px; border: 1px solid #DDD; margin-bottom: 20px;">
             <h3 style="margin: 0 0 10px 0; color: #333;">📄 Descrição</h3>
             <p style="margin: 0; line-height: 1.5;">
-                ${saved.report.reportDescription}
+                ${pub.report.reportDescription}
             </p>
         </div>
 
         <div style="background: #FFFFFF; padding: 15px 20px; border-radius: 10px; border: 1px solid #DDD; margin-bottom: 20px;">
             <h3 style="margin: 0 0 10px 0; color: #333;">📍 Endereço do Relato</h3>
-            <p style="margin: 5px 0;"><strong>Rua:</strong> ${saved.reportAddressRequest.street}</p>
-            <p style="margin: 5px 0;"><strong>Número:</strong> ${saved.reportAddressRequest.number}</p>
-            <p style="margin: 5px 0;"><strong>Cidade:</strong> ${saved.reportAddressRequest.city}</p>
-            <p style="margin: 5px 0;"><strong>Estado:</strong> ${saved.reportAddressRequest.state}</p>
-            <p style="margin: 5px 0;"><strong>Complemento:</strong> ${saved.reportAddressRequest.complement}</p>
-            <p style="margin: 5px 0;"><strong>País:</strong> ${saved.reportAddressRequest.country}</p>
+            <p style="margin: 5px 0;"><strong>Rua:</strong> ${pub.reportAddressRequest.street}</p>
+            <p style="margin: 5px 0;"><strong>Número:</strong> ${pub.reportAddressRequest.number}</p>
+            <p style="margin: 5px 0;"><strong>Cidade:</strong> ${pub.reportAddressRequest.city}</p>
+            <p style="margin: 5px 0;"><strong>Estado:</strong> ${pub.reportAddressRequest.state}</p>
+            <p style="margin: 5px 0;"><strong>Complemento:</strong> ${pub.reportAddressRequest.complement}</p>
+            <p style="margin: 5px 0;"><strong>País:</strong> ${pub.reportAddressRequest.country}</p>
         </div>
 
         <h3 style="margin: 0 0 10px 0;">📸 Imagens enviadas:</h3>
@@ -104,9 +105,9 @@ class ReportService @Autowired constructor(
     </div>
 """.trimIndent(),
                             images = bytes
-                        ).thenReturn(saved)
+                        ).then(
+                            Mono.just("Email sent successfully"))
                     }
-            }
     }
 
     fun getImageBytes(id: String): Mono<List<ByteArray>> {
