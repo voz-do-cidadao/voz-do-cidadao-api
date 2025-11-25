@@ -62,7 +62,7 @@ class ReportService @Autowired constructor(
 
     fun sendEmail (pub: PublicationData): Mono<String> {
          return getImageBytes(pub.id!!)
-                    .flatMap { bytes -> //n entra aqui
+                    .flatMap { bytes ->
                         sendEmailImages(
                             to = listOf(pub.userRequest.email, "vozdocidadao01@gmail.com"),
                             subject = "Voz do cidadão",
