@@ -75,7 +75,7 @@ class ReportService @Autowired constructor(
 
         <div style="background: #F7F9FA; padding: 15px 20px; border-radius: 10px; margin-bottom: 20px;">
             <h3 style="margin: 0 0 10px 0; color: #333;">
-                📝 Tipo de denúncia:
+                📝 Título da denúncia:
             </h3>
             <p style="margin: 0; font-size: 16px; font-weight: bold;">
                 ${pub.report.report}
